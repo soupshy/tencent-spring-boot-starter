@@ -1,23 +1,17 @@
 package cn.soupshy.tencent;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import cn.soupshy.tencent.http.HttpClientConnectionManager;
+import cn.soupshy.tencent.http.HttpClientUtil;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 
-@Configuration
-/**自动装配这个properties类，读取yaml自定义内容**/
-@EnableConfigurationProperties(TencentConfig.class)
-/**service类，@ConditionalOnClass某个 Class 位于类路径上，才会实例化一个Bean。也就是说，当classpath下发现该类的情况下进行实例化。**/
-@ConditionalOnClass(TencentService.class)
-/**当配置文件中 tencentyun 的值为 true 时，实例化此类。可以不填**/
-@ConditionalOnProperty(prefix = "tencentyun", value = "true", matchIfMissing = true)
+
 /**
  * @author 石络
  */
+@Configuration
 public class TencentServiceAutoConfiguration {
 
     /**
@@ -31,4 +25,23 @@ public class TencentServiceAutoConfiguration {
     public TencentService tencentService() {
         return new TencentServiceImpl();
     }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public HttpClientUtil httpClientUtil() {
+        return new HttpClientUtil();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public TencentConfiguration tencentConfiguration() {
+        return new TencentConfiguration();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public HttpClientConnectionManager httpClientConnectionManager() {
+        return new HttpClientConnectionManager();
+    }
+
 }

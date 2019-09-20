@@ -1,6 +1,6 @@
 package cn.soupshy.tencent;
 
-import cn.soupshy.tencent.http.HttpUtil;
+import cn.soupshy.tencent.http.HttpClientUtil;
 import cn.soupshy.tencent.http.ImAccountOperateInfo;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -18,18 +18,20 @@ import com.tls.tls_sigature.tls_sigature;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
  * @author 石络
  */
 @Slf4j
+@Service
 public class TencentServiceImpl implements TencentService {
 
     @Autowired
-    private TencentConfig tencentConfig;
+    private TencentConfiguration tencentConfiguration;
     @Autowired
-    private HttpUtil httpUtil;
+    private HttpClientUtil HttpClientUtil;
 
     public static void main(String[] args) {
         String priKey = "-----BEGIN PRIVATE KEY-----\n" +
@@ -48,8 +50,8 @@ public class TencentServiceImpl implements TencentService {
      * @return
      */
     private String genSig(String identifier) {
-        tls_sigature.GenTLSSignatureResult result = tls_sigature.genSig(tencentConfig.getSdkAppId(), identifier,
-                Integer.MAX_VALUE, tencentConfig.getPriKey());
+        tls_sigature.GenTLSSignatureResult result = tls_sigature.genSig(tencentConfiguration.getSdkAppId(), identifier,
+                Integer.MAX_VALUE, tencentConfiguration.getPriKey());
         if (StringUtils.isEmpty(result.urlSig)) {
             log.error("调用腾讯云 申请IM账户密钥失败 错误消息 {}", result.errMessage);
         }
@@ -73,7 +75,7 @@ public class TencentServiceImpl implements TencentService {
         }
         try {
             // 操作IM相关数据
-            httpUtil.doPost(tencentConfig.getOperateImAccountUrl(), pms, null);
+            HttpClientUtil.doPost(tencentConfiguration.getOperateImAccountUrl(), pms, null);
             String urlSig = null;
             if (info.getIsRegister()) {
                 urlSig = genSig(info.getIdentifier());
@@ -96,26 +98,26 @@ public class TencentServiceImpl implements TencentService {
             // 设置门店编号
             if (!StringUtils.isEmpty(info.getStoreId())) {
                 JSONObject jsonObjectStoreId = new JSONObject();
-                jsonObjectStoreId.put("Tag", tencentConfig.getTagProfileCustomStoreId());
+                jsonObjectStoreId.put("Tag", tencentConfiguration.getTagProfileCustomStoreId());
                 jsonObjectStoreId.put("Value", info.getStoreId());
                 array.add(jsonObjectStoreId);
             }
             // 设置门店员工编号
             if (!StringUtils.isEmpty(info.getStoreEmployeeId())) {
                 JSONObject jsonObjectStoreEmployeeId = new JSONObject();
-                jsonObjectStoreEmployeeId.put("Tag", tencentConfig.getTagProfileCustomStaffId());
+                jsonObjectStoreEmployeeId.put("Tag", tencentConfiguration.getTagProfileCustomStaffId());
                 jsonObjectStoreEmployeeId.put("Value", info.getStoreEmployeeId());
                 array.add(jsonObjectStoreEmployeeId);
             }
             // 设置门店名称
             if (!StringUtils.isEmpty(info.getStoreName())) {
                 JSONObject jsonObjectStoreName = new JSONObject();
-                jsonObjectStoreName.put("Tag", tencentConfig.getTagProfileCustomSName());
+                jsonObjectStoreName.put("Tag", tencentConfiguration.getTagProfileCustomSName());
                 jsonObjectStoreName.put("Value", info.getStoreName());
                 array.add(jsonObjectStoreName);
             }
             setPortraitJson.put("ProfileItem", array);
-            httpUtil.doPost(tencentConfig.getSetPortraitUrl(), setPortraitJson, null);
+            HttpClientUtil.doPost(tencentConfiguration.getSetPortraitUrl(), setPortraitJson, null);
         } catch (Exception e) {
             log.error("腾讯云 设置IM资料异常", e);
         }
@@ -168,11 +170,11 @@ public class TencentServiceImpl implements TencentService {
      * @return
      */
     private CmsClient getCmsClient() {
-        Credential cred = new Credential(tencentConfig.getSecretId(), tencentConfig.getSecretKey());
+        Credential cred = new Credential(tencentConfiguration.getSecretId(), tencentConfiguration.getSecretKey());
         HttpProfile httpProfile = new HttpProfile();
-        httpProfile.setEndpoint(tencentConfig.getEndpoint());
+        httpProfile.setEndpoint(tencentConfiguration.getEndpoint());
         ClientProfile clientProfile = new ClientProfile();
         clientProfile.setHttpProfile(httpProfile);
-        return new CmsClient(cred, tencentConfig.getRegion(), clientProfile);
+        return new CmsClient(cred, tencentConfiguration.getRegion(), clientProfile);
     }
 }
